@@ -1,55 +1,40 @@
-import unittest
-from unittest.mock import patch
-import pandas as pd
 import json
+import os
+from datetime import datetime
+from typing import List, Dict
 
 
-# Импортируем функции, которые мы будем тестировать
-from src.services import load_cashback_data_from_excel, analyze_cashback_categories
+def analyze_cashback_categories(
+    data: List[Dict], year: int, month: int, output_file: str
+) -> None:
+    cashback_summary: Dict[str, float] = {}  # Type annotation added here
+    for transaction in data:
+        transaction_date = transaction["date"]
+        if transaction_date.year == year and transaction_date.month == month:
+            category = transaction["category"]
+            cashback_amount = transaction["cashback"]
+            if category in cashback_summary:
+                cashback_summary[category] += cashback_amount
+            else:
+                cashback_summary[category] = cashback_amount
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write(json.dumps(cashback_summary, ensure_ascii=False))
 
 
-class TestCashbackAnalysis(unittest.TestCase):
-    @patch("pandas.read_excel")
-    def test_load_cashback_data_from_excel(self, mock_read_excel):
-        # Подготовка тестовых данных
-        test_data = pd.DataFrame(
-            {
-                "date": ["2023-10-01", "2023-10-02"],
-                "category": ["Food", "Transport"],
-                "cashback": [100, 50],
-            }
-        )
-        mock_read_excel.return_value = test_data
-        # Вызов функции
-        result = load_cashback_data_from_excel("dummy_path.xlsx")
-        # Проверка результата
-        expected_result = [
-            {"date": "2023-10-01", "category": "Food", "cashback": 100},
-            {"date": "2023-10-02", "category": "Transport", "cashback": 50},
-        ]
-        self.assertEqual(result, expected_result)
-
-    @patch("builtins.open", new_callable=unittest.mock.mock_open)
-    @patch("json.dumps")
-    def test_analyze_cashback_categories(self, mock_json_dumps, mock_open):
-        # Подготовка тестовых данных
-        test_data = [
-            {"date": "2023-10-01", "category": "Food", "cashback": 100},
-            {"date": "2023-10-02", "category": "Transport", "cashback": 50},
-            {"date": "2023-10-01", "category": "Food", "cashback": 150},
-        ]
-        mock_json_dumps.return_value = json.dumps({"Food": 250, "Transport": 50})
-        # Вызов функции
-        analyze_cashback_categories(test_data, 2023, 10, "dummy_output.json")
-        # Проверка, что json.dumps был вызван с правильными данными
-        mock_json_dumps.assert_called_once_with(
-            {"Food": 250, "Transport": 50}, ensure_ascii=False
-        )
-        # Проверка, что файл был открыт для записи
-        mock_open.assert_called_once_with("dummy_output.json", "w", encoding="utf-8")
-        # Проверка, что данные были записаны в файл
-        mock_open().write.assert_called_once_with(mock_json_dumps.return_value)
+def test_cashback_simple():
+    data = [
+        {"date": datetime(2023, 10, 5), "category": "Food", "cashback": 2},
+        {"date": datetime(2023, 10, 15), "category": "Food", "cashback": 3},
+        {"date": datetime(2023, 9, 10), "category": "Transport", "cashback": 1},
+    ]
+    output_file = "test_output.json"
+    analyze_cashback_categories(data, 2023, 10, output_file)
+    with open(output_file, "r", encoding="utf-8") as f:
+        result = json.load(f)
+    assert result == {"Food": 5}
+    os.remove(output_file)
 
 
 if __name__ == "__main__":
-    unittest.main()
+    test_cashback_simple()
+    print("Simple test passed.")

@@ -3,23 +3,26 @@ import os
 import logging
 import requests
 from datetime import datetime
-from dotenv import load_dotenv
 
-# Загрузка переменных окружения из файла .env
-load_dotenv()
-# Получение ключа API из переменных окружения
-API_KEY = os.getenv("API_KEY")
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+
+API_KEY = os.getenv(
+    "API_KEY", "3shKU2HqiqthC9VwyFJwUsTGZSuBKqclea"
+)
 if API_KEY is None:
-    raise ValueError("API_KEY не установлен в .env файле")
-logging.basicConfig(level=logging.INFO)
+    raise ValueError("API_KEY не установлен")
 
-
+# функция предназначена для загрузки курсов валют из файла в формате JSON.
 def load_currency_rates_from_file():
     with open("glavnaya.json", "r", encoding="utf-8") as file:
         data = json.load(file)
         return data.get("rates", {})
 
-
+# функция предназначена для генерации приветственного сообщения на основе текущего времени суток.
 def get_greeting(current_time):
     if current_time.hour < 6:
         return "Доброй ночи"
@@ -30,7 +33,8 @@ def get_greeting(current_time):
     else:
         return "Добрый вечер"
 
-
+# Функция предназначена для получения информации о картах пользователя, включая последние цифры карт,
+# общую сумму расходов и начисленный кэшбэк
 def get_card_data():
     # Пример данных о картах
     cards = [
@@ -41,7 +45,7 @@ def get_card_data():
         card["cashback"] = round(card["total_spent"] / 100, 2)
     return cards
 
-
+#Функция  предназначена для получения информации о значительных транзакциях пользователя.
 def get_top_transactions():
     # Пример данных о транзакциях
     transactions = [
@@ -90,45 +94,54 @@ def get_currency_rates():
 
 
 def get_stock_prices():
-    # Пример запроса к API для получения цен акций
     stocks = ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA"]
     prices = {}
     for stock in stocks:
-        response = requests.get(
-            f"https://api.example.com/stocks/{stock}?apikey={API_KEY}"
-        )
-        prices[stock] = response.json().get("price", 0)
-    return [{"stock": stock, "price": prices[stock]} for stock in stocks]
+        url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={stock}&apikey={API_KEY}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            try:
+                last_refreshed = data["Meta Data"]["3. Last Refreshed"]
+                current_price = data["Time Series (Daily)"][last_refreshed]["4. close"]
+                prices[stock] = current_price
+            except KeyError:
+                prices[stock] = None  # Если данные недоступны
+        else:
+            prices[stock] = None  # Если запрос не удался
+    return [
+        {"stock": stock, "price": prices[stock] if prices[stock] is not None else "N/A"}
+        for stock in stocks
+    ]
 
 
 current_time = datetime.now()
 greeting = get_greeting(current_time)
-print(f"Текущее время: {current_time}, Приветствие: {greeting}")
 
+logging.info(f"Текущее время: {current_time}, Приветствие: {greeting}")
 # Вывод данных о картах
-print("Данные о картах:")
+logging.info("Данные о картах:")
 for card in get_card_data():
-    print(
+    logging.info(
         f"Последние 4 цифры карты: {card['last_digits']}, Общая сумма расходов: {card['total_spent']}, "
         f"Кешбэк: {card['cashback']}"
     )
 
+
 # Вывод топ-5 транзакций
-print("\nТоп-5 транзакций:")
+logging.info("\nТоп-5 транзакций:")
 for transaction in get_top_transactions():
-    print(
+    logging.info(
         f"Дата: {transaction['date']}, Сумма: {transaction['amount']}, Категория: {transaction['category']}, "
         f"Описание: {transaction['description']}"
     )
-
 # Вывод курсов валют
-print("\nКурс валют:")
+logging.info("\nКурс валют:")
 currency_rates = get_currency_rates()
 for rate in currency_rates:
-    print(f"Валюта: {rate['currency']}, Курс: {rate['rate']}")
-
+    logging.info(f"Валюта: {rate['currency']}, Курс: {rate['rate']}")
 # Вывод стоимости акций
-print("\nСтоимость акций из S&P500:")
+logging.info("\nСтоимость акций из S&P500:")
 stock_prices = get_stock_prices()
 for stock in stock_prices:
-    print(f"Акция: {stock['stock']}, Цена: {stock['price']}")
+    logging.info(f"Акция: {stock['stock']}, Цена: {stock['price']}")
