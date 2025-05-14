@@ -63,10 +63,6 @@ bank_details = "Visa Classic 6831982470375048"
 masked_details = mask_account_card(bank_details)
 print(f"Masked details: {masked_details}") # Output: Visa Classic 6831 98** **** 5048
 
-Преобразование даты
-date_string = "2023-10-26T00:00:00"
-formatted_date = get_date(date_string)
-print(f"Formatted date: {formatted_date}") # Output: 26.10.2023
 
 Пример данных для фильтрации и сортировки
 transactions: List[Dict] = [
