@@ -80,7 +80,7 @@ sorted_transactions = sort_by_date(transactions)
 print(f"Sorted transactions: {sorted_transactions}")
 
 ~~~
-
+#######
 ## Зависимости
 
 Проект использует следующие зависимости:
