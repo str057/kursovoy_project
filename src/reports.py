@@ -39,7 +39,7 @@ def spending_by_category(
 if __name__ == "__main__":
     try:
         # Чтение файла Excel без жёсткого указания формата даты
-        transactions_df = pd.read_excel(Path("food.xlsx"))
+        transactions_df = pd.read_excel(Path(r"C:\Users\R\PycharmProjects\kr\data\food.xlsx"))
         # Преобразование колонки 'date' в datetime, с заменой некорректных значений на NaT
         transactions_df["date"] = pd.to_datetime(
             transactions_df["date"], errors="coerce"
