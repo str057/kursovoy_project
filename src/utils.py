@@ -10,17 +10,17 @@ logging.basicConfig(
 )
 
 
-API_KEY = os.getenv(
-    "API_KEY", "3shKU2HqiqthC9VwyFJwUsTGZSuBKqclea"
-)
+API_KEY = os.getenv("API_KEY", "3shKU2HqiqthC9VwyFJwUsTGZSuBKqclea")
 if API_KEY is None:
     raise ValueError("API_KEY не установлен")
+
 
 # функция предназначена для загрузки курсов валют из файла в формате JSON.
 def load_currency_rates_from_file():
     with open("glavnaya.json", "r", encoding="utf-8") as file:
         data = json.load(file)
         return data.get("rates", {})
+
 
 # функция предназначена для генерации приветственного сообщения на основе текущего времени суток.
 def get_greeting(current_time):
@@ -32,6 +32,7 @@ def get_greeting(current_time):
         return "Добрый день"
     else:
         return "Добрый вечер"
+
 
 # Функция предназначена для получения информации о картах пользователя, включая последние цифры карт,
 # общую сумму расходов и начисленный кэшбэк
@@ -45,7 +46,8 @@ def get_card_data():
         card["cashback"] = round(card["total_spent"] / 100, 2)
     return cards
 
-#Функция  предназначена для получения информации о значительных транзакциях пользователя.
+
+# Функция  предназначена для получения информации о значительных транзакциях пользователя.
 def get_top_transactions():
     # Пример данных о транзакциях
     transactions = [

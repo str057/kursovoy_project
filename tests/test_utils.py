@@ -1,125 +1,67 @@
-import pytest
+import unittest
 from unittest.mock import patch, MagicMock
-from datetime import datetime
-
+from datetime import datetime  # Импортируем datetime
 from src.utils import (
     get_greeting,
     get_card_data,
     get_top_transactions,
     get_currency_rates,
     get_stock_prices,
-)
+)  # Замените your_module на имя вашего файла
 
 
-@pytest.fixture
-def mock_card_data():
-    return [
-        {"last_digits": "5814", "total_spent": 1262.00},
-        {"last_digits": "7512", "total_spent": 7.94},
-    ]
+class TestFinanceFunctions(unittest.TestCase):
+    def test_get_greeting_morning(self):
+        time = datetime(2021, 12, 1, 9, 0, 0)  # 9:00 AM
+        self.assertEqual(get_greeting(time), "Доброе утро")
+
+    def test_get_greeting_afternoon(self):
+        time = datetime(2021, 12, 1, 15, 0, 0)  # 3:00 PM
+        self.assertEqual(get_greeting(time), "Добрый день")
+
+    def test_get_greeting_evening(self):
+        time = datetime(2021, 12, 1, 19, 0, 0)  # 7:00 PM
+        self.assertEqual(get_greeting(time), "Добрый вечер")
+
+    def test_get_greeting_night(self):
+        time = datetime(2021, 12, 1, 2, 0, 0)  # 2:00 AM
+        self.assertEqual(get_greeting(time), "Доброй ночи")
+
+    def test_get_card_data(self):
+        cards = get_card_data()
+        self.assertEqual(len(cards), 2)
+        self.assertEqual(cards[0]["last_digits"], "5814")
+        self.assertEqual(cards[0]["cashback"], 12.62)
+
+    def test_get_top_transactions(self):
+        transactions = get_top_transactions()
+        self.assertEqual(transactions[0]["amount"], 1198.23)  # Самая большая сумма
+        self.assertEqual(transactions[-1]["amount"], -14216.42)  # Самая маленькая сумма
+
+    @patch("requests.get")
+    def test_get_currency_rates(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"rates": {"EUR": 0.85, "GBP": 0.75}}
+        mock_get.return_value = mock_response
+        rates = get_currency_rates()
+        self.assertEqual(len(rates), 2)
+        self.assertEqual(rates[0]["currency"], "EUR")
+        self.assertEqual(rates[0]["rate"], 0.85)
+
+    @patch("requests.get")
+    def test_get_stock_prices(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "Meta Data": {"3. Last Refreshed": "2021-12-01"},
+            "Time Series (Daily)": {"2021-12-01": {"4. close": "150.00"}},
+        }
+        mock_get.return_value = mock_response
+        prices = get_stock_prices()
+        self.assertEqual(prices[0]["stock"], "AAPL")
+        self.assertEqual(
+            prices[0]["price"], "150.00"
+        )  # Убедитесь, что здесь ожидается правильная цена
 
 
-@pytest.fixture
-def mock_transactions():
-    return [
-        {
-            "date": "21.12.2021",
-            "amount": 1198.23,
-            "category": "Переводы",
-            "description": "Перевод Кредитная карта. ТП 10.2 RUR",
-        },
-        {
-            "date": "20.12.2021",
-            "amount": 829.00,
-            "category": "Супермаркеты",
-            "description": "Лента",
-        },
-        {
-            "date": "20.12.2021",
-            "amount": 421.00,
-            "category": "Различные товары",
-            "description": "Ozon.ru",
-        },
-        {
-            "date": "16.12.2021",
-            "amount": -14216.42,
-            "category": "ЖКХ",
-            "description": "ЖКУ Квартира",
-        },
-        {
-            "date": "16.12.2021",
-            "amount": 453.00,
-            "category": "Бонусы",
-            "description": "Кешбэк за обычные покупки",
-        },
-    ]
-
-
-# Тестирование функции get_greeting
-def test_get_greeting():
-    assert get_greeting(datetime(2023, 1, 1, 5, 0)) == "Доброй ночи"
-    assert get_greeting(datetime(2023, 1, 1, 9, 0)) == "Доброе утро"
-    assert get_greeting(datetime(2023, 1, 1, 15, 0)) == "Добрый день"
-    assert get_greeting(datetime(2023, 1, 1, 19, 0)) == "Добрый вечер"
-
-
-# Тестирование функции get_card_data
-def test_get_card_data(mock_card_data):
-    cards = get_card_data()
-    assert len(cards) == len(mock_card_data)
-    for card in cards:
-        assert "cashback" in card
-        assert isinstance(card["cashback"], float)
-
-
-# Тестирование функции get_top_transactions
-def test_get_top_transactions():
-    transactions = get_top_transactions()
-    assert len(transactions) == 5
-    amounts = [t["amount"] for t in transactions]
-    assert amounts == sorted(amounts, reverse=True)
-
-    # Тестирование функции get_currency_rates с использованием mock
-
-
-@patch("src.utils.requests.get")
-def test_get_currency_rates(mock_get):
-    mock_response = MagicMock()
-    mock_response.json.return_value = {"rates": {"USD": 1.0, "EUR": 0.85}}
-    mock_get.return_value = mock_response
-    rates = get_currency_rates()
-    assert isinstance(rates, list)
-    assert any(rate["currency"] == "USD" for rate in rates)
-    assert any(
-        isinstance(rate["rate"], float) or isinstance(rate["rate"], int)
-        for rate in rates
-    )
-
-
-# Тестирование функции get_stock_prices с использованием mock
-@patch("src.utils.requests.get")
-def test_get_stock_prices(mock_get):
-    mock_response = MagicMock()
-    mock_response.json.return_value = {
-        "Meta Data": {
-            "3. Last Refreshed": "2023-01-01",
-        },
-        "Time Series (Daily)": {
-            "2023-01-01": {
-                "1. open": "150.00",
-                "2. high": "155.00",
-                "3. low": "149.00",
-                "4. close": "150.00",
-                "5. volume": "1000000",
-            }
-        },
-    }
-    mock_get.return_value = mock_response
-    stock_prices = get_stock_prices()
-
-    assert isinstance(stock_prices, list)
-    assert len(stock_prices) == 5
-    for stock in stock_prices:
-        assert "stock" in stock
-        assert "price" in stock
-        assert stock["price"] is not None  # Проверка, что цена не None
+if __name__ == "__main__":
+    unittest.main()

@@ -7,10 +7,16 @@
       "cashback": 12.62
     },
     {
-      "last_d  ],\n  \"top_transactions\": [\n    {\n      \"date\": \"21.12.2021\",\n      \"amount\": 1198.23,\n      \"category\": \"Переводы\",\nigits": "7512",
+      "last_digits": "7512",
       "total_spent": 7.94,
       "cashback": 0.08
     }
+  ],
+  "top_transactions": [
+    {
+      "date": "21.12.2021",
+      "amount": 1198.23,
+      "category": "Переводы",
       "description": "Перевод Кредитная карта. ТП 10.2 RUR"
     },
     {
